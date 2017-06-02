@@ -1,0 +1,124 @@
+/*			
+			PRIMARY TASK
+
+	Write a function that scans the specified directory and saves information about all files and folders in ascending order to a text file.
+	The format of the entry in the file is: <size> <path_to_file_or_folder>
+
+	*/
+
+#include <iostream>
+#include <windows.h>
+#include <io.h>
+#include <stdio.h>
+#include <string>
+#include <vector>
+#include <map>
+#include <set>
+#include<tuple>
+#include <utility> 
+
+//THAT FUNCTION FORMS A NEW PATH FROM OLDER ONE AND ADDING A FOLDER NAME
+std::string formPath(std::string oldPath, std::string dirName) {
+
+	std::string tempPath1 = oldPath.substr(0, (oldPath.length() - 3));
+	std::string parc = "\\";
+	std::string endForm = "*.*";
+
+	std::string newPath = tempPath1 + dirName + parc + endForm;	
+	return newPath;
+}
+
+//THAT FUNCTION COUNTS A SIZE OF THE FOLDER WHAT CAN BE IN TARGET FOLDER
+size_t getFolderSize(std::string secondPath,size_t &folderSize) {	
+		
+		size_t finalSize=0;
+		struct _finddata_t searchR;
+		intptr_t hFile;		
+
+		if ((hFile = _findfirst(secondPath.c_str(), &searchR)) == -1L)
+		{
+			std::cerr << "Function getFolderSize() was failed to open a directory\n" << secondPath << std::endl;
+		}
+		else
+		{
+			do {
+				if (strcmp(searchR.name, ".") && strcmp(searchR.name, "..")) {
+					if (searchR.attrib == _A_SUBDIR) {
+						getFolderSize(formPath(secondPath,searchR.name),folderSize);						
+					}
+					else {						
+						folderSize += searchR.size;					
+					}
+				}				
+			} while (_findnext(hFile, &searchR) == 0);
+			_findclose(hFile);		
+		}
+		return folderSize /1000;
+}
+
+//THIS IS A PRIMARY FUNCTION 
+void scanDir(std::string primaryPath) {
+		
+	std::vector<std::string> primaryPathWays;	
+	std::multimap < size_t, std::string > mainStorage;
+
+	struct _finddata_t file;
+	intptr_t hFile;
+
+	if ((hFile = _findfirst(primaryPath.c_str(), &file)) == -1L)
+	{
+		std::cerr << "Function scanDir() failed to open a folder. The primary path is incorrect." << std::endl;
+	}
+	else
+	{
+		do
+		{
+			if (file.attrib == _A_SUBDIR) {
+				if (strcmp(file.name, ".") && strcmp(file.name, "..")) {
+					std::string subPath = formPath(primaryPath, file.name);				
+					primaryPathWays.push_back(subPath);					
+				}
+			}
+			else {
+				if (strcmp(file.name, ".") && strcmp(file.name, "..")) {
+					mainStorage.insert(std::pair<size_t,std::string>(file.size/1000, primaryPath));					 	
+				}			
+			}
+		} while (_findnext(hFile, &file) == 0);
+		_findclose(hFile);
+	}
+
+	size_t fSize = 0;
+	for (int i = 0; i < primaryPathWays.size();++i) {		
+		size_t currentSize = getFolderSize(primaryPathWays[i],fSize);
+		mainStorage.insert(std::pair<size_t, std::string>(currentSize, primaryPathWays[i]));		
+	}
+
+	std::multiset<std::pair<size_t, std::string>> sortedResults;
+
+	for (std::multimap<size_t, std::string>::iterator itr = mainStorage.begin(); itr != mainStorage.end(); itr++) {
+		sortedResults.insert(std::pair<size_t, std::string>((*itr).first, (*itr).second));
+	}
+	
+	std::cout << "SCANNING RESULTS FOR PATH "<<primaryPath << "\n";
+	
+	for (std::multiset<std::pair<size_t, std::string>>::iterator itr = sortedResults.begin(); itr != sortedResults.end(); itr++) {
+		std::cout <<"<" <<itr->first<<"> "<<":<"<<itr->second<<">"<<"\n";
+	}
+}
+
+
+int main() {
+
+	/*			
+			PRIMARY TASK
+
+	Write a function that scans the specified directory and saves information about all files and folders in ascending order to a text file.
+	The format of the entry in the file is: <size> <path_to_file_or_folder>
+
+	*/
+
+	std::string primaryPath = "F:\\TRNW\\*.*";	
+	scanDir(primaryPath);	
+	return 0;
+}
