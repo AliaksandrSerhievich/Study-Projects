@@ -1,0 +1,382 @@
+#include <iostream>
+#include<string>
+#include <vector>
+#include <cstdlib>
+#include <cmath> 
+
+void opSpace(int a);
+void symbolsPosition(std::string expression);
+std::string parseSimpleExpression(std::string simpleExpression);
+std::string countExpression(std::vector<std::string>expressionVector);
+std::string countSimple(std::string leftNumber, std::string operation, std::string rightNumber);
+std::string opBraced(std::string expression);
+std::string calculateBracedExpression(std::string expression);
+std::vector<std::string> formBack(std::vector<std::string>expressionVector);
+bool firstPriorityChecker(std::vector<std::string>expressionVector);
+bool isBraced(std::string expression);
+bool isAllGoodWithBracers(std::string expression);
+double calculateExpression(std::string expression);
+
+void opSpace(int a) {
+	for (size_t i = 0; i < a; i++)
+	{
+		std::cout << std::endl;
+	}
+}
+void symbolsPosition(std::string expression) {
+
+	for (size_t i = 0; i < expression.length(); i++)
+	{
+		std::cout << "Symbol " << expression[i] << " - position -> " << i << "\n";
+	}
+
+}
+std::string parseSimpleExpression(std::string simpleExpression) {
+	size_t firstPositionNum = 0;
+	size_t endPositionNum = 0;
+	size_t distance = endPositionNum - firstPositionNum - 1;
+	std::vector<std::string>separatedPositionsVector;
+
+	for (size_t i = 0; i < simpleExpression.length(); ++i)
+	{
+		size_t lastCell = simpleExpression.length() - 1;
+
+		if (simpleExpression[i] == '*' || simpleExpression[i] == '/' || simpleExpression[i] == '+' || simpleExpression[i] == '-')
+		{
+			endPositionNum = i;
+			distance = endPositionNum - firstPositionNum;
+			if (distance < 1) { distance = 1; }
+			std::string num = simpleExpression.substr(firstPositionNum, distance);
+			separatedPositionsVector.push_back(num);
+			firstPositionNum = i + 1;
+			std::string op = simpleExpression.substr(i, 1);
+			separatedPositionsVector.push_back(op);
+		}
+		if (i == lastCell)
+		{
+			distance = lastCell - firstPositionNum + 1;
+			if (distance < 1) { distance = 1; }
+			std::string lastNum = simpleExpression.substr(firstPositionNum, distance);
+			separatedPositionsVector.push_back(lastNum);
+		}
+	}
+	firstPositionNum = 0;
+	endPositionNum = 0;
+	std::string exp2 = countExpression(separatedPositionsVector);
+	return exp2;
+}
+std::string countExpression(std::vector<std::string>expressionVector) {
+	std::vector<std::string>tempExprVector = formBack(expressionVector);
+	while (tempExprVector.size() != 1) {
+		tempExprVector = formBack(tempExprVector);
+	}
+	std::string expr = tempExprVector[0];
+	return expr;
+}
+std::vector<std::string> formBack(std::vector<std::string>expressionVector) {
+	std::vector<std::string>resultVector;
+	std::vector<std::string>storageVector;
+	std::vector<std::string>temporaryExpressionsVector;
+
+	if (expressionVector.size() == 1) {
+		resultVector.push_back(expressionVector[0]);
+		return resultVector;
+	}
+	if (expressionVector.size() > 1)
+	{
+		size_t tempCounter = 0;
+		size_t insertPosition = 0;
+
+		if (firstPriorityChecker(expressionVector)) {
+			bool opFlag = false;
+
+			for (size_t i = 0; i < expressionVector.size(); ++i)
+			{
+				if (opFlag == false && (expressionVector[i][0] == '*' || expressionVector[i][0] == '/')) {
+					insertPosition = i; opFlag = true;
+				}
+			}
+			for (size_t i = 0; i < insertPosition - 1; ++i)
+			{
+				temporaryExpressionsVector.push_back(expressionVector[i]);
+			}
+			std::string tempResult = countSimple(expressionVector[insertPosition - 1], expressionVector[insertPosition], expressionVector[insertPosition + 1]);
+			temporaryExpressionsVector.push_back(tempResult);
+			for (size_t i = insertPosition + 2; i < expressionVector.size(); ++i)
+			{
+				temporaryExpressionsVector.push_back(expressionVector[i]);
+			}
+			for (size_t i = 0; i < temporaryExpressionsVector.size(); i++)
+			{
+				storageVector.push_back(temporaryExpressionsVector[i]);
+			}
+			temporaryExpressionsVector.clear();
+			tempCounter = 0;
+			insertPosition = 0;
+			return storageVector;
+		}
+		else {
+			bool opFlag = false;
+			for (size_t i = 0; i < expressionVector.size(); ++i)
+			{
+				if (opFlag == false && (expressionVector[i][0] == '+' || expressionVector[i][0] == '-')) {
+					insertPosition = i; opFlag = true;
+				}
+			}
+			for (size_t i = 0; i < insertPosition - 1; ++i)
+			{
+				temporaryExpressionsVector.push_back(expressionVector[i]);
+			}
+			std::string tempResult = countSimple(expressionVector[insertPosition - 1], expressionVector[insertPosition], expressionVector[insertPosition + 1]);
+			temporaryExpressionsVector.push_back(tempResult);
+			for (size_t i = insertPosition + 2; i < expressionVector.size(); ++i)
+			{
+				temporaryExpressionsVector.push_back(expressionVector[i]);
+			}
+			for (size_t i = 0; i < temporaryExpressionsVector.size(); i++)
+			{
+				storageVector.push_back(temporaryExpressionsVector[i]);
+			}
+			temporaryExpressionsVector.clear();
+			tempCounter = 0;
+			insertPosition = 0;
+			return storageVector;
+		}
+	}
+}
+bool firstPriorityChecker(std::vector<std::string>expressionVector) {
+	bool priorityFlag = false;
+	size_t detectSumm = 0;
+	for (size_t i = 0; i < expressionVector.size(); ++i)
+	{
+		if (expressionVector[i][0] == '*' || expressionVector[i][0] == '/')
+		{
+			detectSumm++;
+		}
+	}
+	if (detectSumm>0)
+	{
+		priorityFlag = true;
+	}
+	else { priorityFlag = false; }
+	return priorityFlag;
+}
+std::string countSimple(std::string leftNumber, std::string operation, std::string rightNumber) {
+	std::string result;
+	double leftNum = std::stod(leftNumber);
+	double rightNum = std::stod(rightNumber);
+	double resultD = 0;
+	char opr = operation[0];
+	switch (opr) {
+	case '+':
+		resultD = leftNum + rightNum;
+		break;
+	case '-':
+		resultD = leftNum - rightNum;
+		break;
+	case '*':
+		resultD = leftNum * rightNum;
+		break;
+	case '/':
+		resultD = leftNum / rightNum;
+		break;
+
+	default:
+		resultD = resultD;
+		break;
+	}	
+	double bps = std::round(resultD);
+	result = std::to_string(bps);
+	return result;
+}
+bool isBraced(std::string expression) {
+	bool braceFlag = false;
+	int braceCounter = 0;
+	for (size_t i = 0; i < expression.length(); i++)
+	{
+		if (expression[i] == '(' || expression[i] == ')')
+		{
+			braceCounter++;
+		}
+	}
+	if (braceCounter>0)
+	{
+		braceFlag = true;
+	}
+	return braceFlag;
+}
+bool isAllGoodWithBracers(std::string expression) {
+	bool okFlag = true;
+	int leftBracers = 0;
+	int rightBracers = 0;
+	std::vector<size_t>leftBracersVector;
+	std::vector<size_t>rightBracersVector;
+	for (size_t i = 0; i < expression.length(); ++i)
+	{
+		if (expression[i] == '(') {
+			leftBracers++;
+			leftBracersVector.push_back(i);
+		}
+		if (expression[i] == ')') {
+			rightBracers++;
+			rightBracersVector.push_back(i);
+		}
+	}
+
+	if (leftBracers != rightBracers)
+	{
+		okFlag = false;
+		std::cout << "Incorrect expression,calculation aborted....\n";
+
+		if (leftBracers>rightBracers) {
+			std::cout << "Check amount of the right bracers in your expression.\n";
+		}
+		else {
+			std::cout << "Check amount of the left bracers in your expression.\n";
+		}
+	}
+	for (size_t i = 0; i < expression.length() - 1; i++)
+	{
+		if (expression[i] == '(') {
+			if (expression[i + 1] == ')')
+			{
+				okFlag = false;
+				std::cout << "Empty bracers detected. Calculation halted...\n";
+			}
+		}
+	}
+	int flow = 0;
+	for (size_t i = 0; i < expression.length(); i++) {
+		if (expression[i] == '(' || expression[i] == ')') {
+			if (expression[i] == '(') {
+				flow++;
+			}
+			if (expression[i] == ')'&& flow == 0) {
+				okFlag = false;
+			}
+			if (expression[i] == ')'&& flow > 0) {
+				flow--;
+			}
+		}
+	}
+	for (size_t i = 0; i < expression.length() - 1; i++)
+	{
+		if (expression[i] == ')') {
+			if (expression[i + 1] == '(')
+			{
+				okFlag = false;
+				std::cout << "Wrong combination of bracers detected. Calculation halted...\n";
+			}
+		}
+	}
+	return okFlag;
+}
+std::string opBraced(std::string expression) {
+
+	std::string result = "";	
+	std::vector<size_t>leftBracerPositionsVector;
+	std::vector<size_t>rightBracerPositionsVector;
+
+	if (isBraced(expression)) {	
+		size_t leftBraceOp = 0;
+		for (size_t i = 0; i < expression.length(); i++)
+		{
+			if (expression[i] == '(')
+			{
+				leftBracerPositionsVector.push_back(i);
+			}
+		}
+		leftBraceOp = leftBracerPositionsVector[leftBracerPositionsVector.size() - 1];
+		size_t rightBraceOp = 0;
+		for (size_t i = leftBraceOp; i < expression.length(); i++)
+		{
+			if (expression[i] == ')')
+			{
+				rightBracerPositionsVector.push_back(i);
+			}
+		}
+		rightBraceOp = rightBracerPositionsVector[0];
+		size_t betweenDistance = rightBraceOp - leftBraceOp - 1;
+		std::string betweenBracersExpression = expression.substr(leftBraceOp + 1, betweenDistance);
+		std::string betweenBracersResult = parseSimpleExpression(betweenBracersExpression);
+		std::string newFormedExpression = "";
+		for (size_t i = 0; i < leftBraceOp; ++i)
+		{
+			newFormedExpression += expression[i];
+		}
+		newFormedExpression += betweenBracersResult;
+		int newWritingPosition = leftBraceOp + betweenBracersExpression.length() + 2;
+
+		if (newWritingPosition != expression.length() - 1) {
+			for (size_t i = newWritingPosition; i < expression.length(); ++i)
+			{
+				newFormedExpression += expression[i];
+			}
+		}
+		if (newWritingPosition == expression.length() - 1) {
+			newFormedExpression += expression[expression.length() - 1];
+		}
+		result = newFormedExpression;
+	}
+	else {
+		result = expression;
+	}
+	return result;
+}
+std::string calculateBracedExpression(std::string expression) {
+	std::string result = opBraced(expression);	
+	return result;
+}
+double calculateExpression(std::string expression) {
+	double result = 0;
+	std::string newM;
+
+	if (isBraced(expression)) {   
+		if (isAllGoodWithBracers(expression))   
+		{
+			std::string exm = calculateBracedExpression(expression);
+			result = std::stod(exm);
+
+			while (isBraced(exm)) {
+				exm = calculateBracedExpression(exm);
+			}			
+			result = std::stod(parseSimpleExpression(exm));
+		}
+		else { 
+			std::cout << "Cannot calculate expression - wrong amount of bracers \n";
+		}
+	}
+	else {		// ПЕРЕДАЧА ВЫРАЖЕНИЯ В АЛГОРИТМ ВЫЧИСЛЕНИЯ БЕЗ СКОБОК
+
+		std::cout << "Intaking - " << expression << "\n";
+
+		std::string strResult = parseSimpleExpression(expression);
+		result = std::stod(strResult);
+	}
+	return result;
+}
+
+int main() {
+	setlocale(LC_ALL, "Russian");
+	std::vector<std::string>inputExpressions;
+	std::string sentence1 = "169-6*(123+6-8+2*6/7)";
+	inputExpressions.push_back(sentence1);
+	std::string sentence2 = "169-6*(2*2*2*2*2*2*2/4)";
+	inputExpressions.push_back(sentence2);
+	std::string sentence3 = "169-6*(2+2+2+2-3)+(100*100)";
+	inputExpressions.push_back(sentence3);
+	std::string sentence4 = "169-6*(100/10+200/20+25-5)";
+	inputExpressions.push_back(sentence4);
+	std::string sentence5 = "6+(7*(100-9*10-(7*1+2)))";
+	inputExpressions.push_back(sentence5);
+	std::string sentence6 = "100/(10+((200/20)+25-5))";
+	inputExpressions.push_back(sentence6);	
+	for (size_t i = 0; i < inputExpressions.size(); i++)
+	{
+		double m = calculateExpression(inputExpressions[i]);
+		std::cout << "Expression: " << inputExpressions[i] << " = ";
+		std::cout << m << " \n";
+		opSpace(2);
+	}	
+	return 0;
+}
